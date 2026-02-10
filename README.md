@@ -2,16 +2,22 @@
 
 Autonomous **Daily Ops Brief** generator for e-commerce: aggregates read-only metrics (Shopify + Meta Ads + Google Ads), detects performance anomalies, and maintains a lightweight decision memory.
 
-## Why this exists
-This project was built to **apply and showcase my learnings** in agentic systems and production-style engineering.
+**Built to apply my learnings** in agentic systems + production-style engineering, inspired by real client ops needs.
 
-It is also inspired by real-world client needs (daily ops reporting), and serves as a reusable template to:
-- structure data connectors cleanly
-- normalize metrics into a single domain model
-- generate anomaly/alert signals
-- persist lightweight decision memory (SQLite)
+![Swagger UI](assets/swagger-ui.png)
 
-## Quickstart (local)
+## What it does
+- Ingests read-only metrics (mock adapters by default)
+- Normalizes metrics into a single domain model (`DailyMetrics`)
+- Generates alerts/anomaly signals (yesterday vs baseline)
+- Produces a Markdown **Daily Ops Brief**
+- Stores lightweight **decision memory** (SQLite)
+- Snapshots landing page hashes for change detection (demo)
+
+## Example output
+See: `assets/sample-brief.md`
+
+## 60-second demo (local)
 
 ### 1) Requirements
 - Python 3.11+
@@ -23,19 +29,25 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3) Run demo (mock adapters)
+### 3) Generate a brief (CLI)
 ```bash
 python -m daily_ops_agent.cli.main brief
 ```
 
-### 4) Run API
+### 4) Run the API + open docs
 ```bash
 uvicorn daily_ops_agent.api.main:app --reload
 ```
 
 Open:
-- Interactive API docs (Swagger UI): **http://127.0.0.1:8000/docs**
-- Daily brief endpoint: **http://127.0.0.1:8000/brief/daily**
+- Swagger UI: **http://127.0.0.1:8000/docs**
+- Daily brief: **http://127.0.0.1:8000/brief/daily**
+
+### 5) Snapshot demo landing pages
+```bash
+curl -X POST http://127.0.0.1:8000/changes/snapshot
+curl "http://127.0.0.1:8000/changes?limit=20"
+```
 
 ## Docker
 ```bash
@@ -45,6 +57,3 @@ docker compose up --build
 ## Docs
 - `docs/architecture.md`
 - `docs/runbook.md`
-
-## Status
-MVP: brief + alerts + API + SQLite decision memory. Next: change detection + real adapters.
