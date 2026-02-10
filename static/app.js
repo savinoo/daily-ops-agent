@@ -111,23 +111,66 @@
     async loadBrief() {
       const btn = document.getElementById('btnGen');
       if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+
+      const kpiCards = document.getElementById('kpiCards');
+      if (kpiCards) kpiCards.innerHTML = '';
+      const diagBox = document.getElementById('diagBox');
+      const diagList = document.getElementById('diagList');
+      if (diagBox) diagBox.classList.add('hidden');
+      if (diagList) diagList.innerHTML = '';
+
       // Prefer real dashboard when available
       const dash = await UI.api('/dashboard?days=30&baseline_days=7');
       if (dash && dash.current) {
         UI.setAlertBadges(dash.alerts);
-        // Build a short brief from dashboard data
+
         const c = dash.current;
         const b = dash.baseline || {};
-        const fmt = (n) => (n === null || n === undefined) ? '—' : n;
         const aov = c.orders ? (c.revenue / c.orders) : 0;
         const cr = c.sessions ? (c.orders / c.sessions) : 0;
         const meta_roas = c.meta_spend ? (c.meta_revenue / c.meta_spend) : 0;
         const google_roas = c.google_spend ? (c.google_revenue / c.google_spend) : 0;
 
-        const md = `# Daily Ops Dashboard — ${c.day}\n\n## Summary\n- Revenue: **$${Number(c.revenue).toLocaleString()}** (baseline $${Number(b.revenue||0).toLocaleString()})\n- Orders: **${fmt(c.orders)}** (baseline ${fmt(b.orders)})\n- AOV: **$${aov.toFixed(2)}**\n- CR: **${(cr*100).toFixed(2)}%**\n\n## Paid Media\n- Meta spend: $${Number(c.meta_spend).toLocaleString()} | ROAS: ${meta_roas.toFixed(2)}\n- Google spend: $${Number(c.google_spend).toLocaleString()} | ROAS: ${google_roas.toFixed(2)}\n\n## Alerts\n${(dash.alerts||[]).length ? (dash.alerts.map(a=>`- [${a.severity.toUpperCase()}] ${a.message}`).join('\n')) : '- No alerts.'}\n`;
+        const pct = (curr, base) => {
+          if (!base) return null;
+          return ((curr - base) / base) * 100;
+        };
+        const fmtPct = (p) => (p === null || !Number.isFinite(p)) ? '—' : `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
+
+        const cards = [
+          { label: 'Revenue', value: `$${Number(c.revenue).toLocaleString()}`, delta: fmtPct(pct(c.revenue, b.revenue)) },
+          { label: 'Orders', value: `${c.orders}`, delta: fmtPct(pct(c.orders, b.orders)) },
+          { label: 'CR', value: `${(cr * 100).toFixed(2)}%`, delta: '—' },
+          { label: 'AOV', value: `$${aov.toFixed(2)}`, delta: '—' },
+          { label: 'Meta ROAS', value: `${meta_roas.toFixed(2)}`, delta: '—' },
+          { label: 'Google ROAS', value: `${google_roas.toFixed(2)}`, delta: '—' },
+        ];
+
+        if (kpiCards) {
+          kpiCards.innerHTML = cards.map((x) => `
+            <div class="bg-slate-900/20 border border-slate-700 rounded-2xl p-3">
+              <div class="text-xs text-slate-400">${x.label}</div>
+              <div class="mt-1 text-lg font-semibold text-slate-100">${x.value}</div>
+              <div class="mt-1 text-xs text-slate-400">vs baseline: <span class="text-slate-200">${x.delta}</span></div>
+            </div>
+          `).join('');
+        }
+
+        // Suggested checks (very simple heuristics)
+        const suggestions = [];
+        const keys = (dash.alerts || []).map((a) => a.key);
+        if (keys.includes('cr_drop')) suggestions.push('Checkout/landing: test add-to-cart, checkout, mobile layout, recent deploys.');
+        if (keys.includes('revenue_drop')) suggestions.push('Top channels: is revenue down across all sources or one channel only?');
+        if (keys.includes('meta_roas_drop') || keys.includes('google_roas_drop')) suggestions.push('Ads: check spend allocation, attribution window changes, and campaign learning resets.');
+        if (keys.includes('meta_roas_drop') && keys.includes('google_roas_drop')) suggestions.push('Site-wide: if both ROAS drop, suspect conversion issues (not just one platform).');
+        if (suggestions.length) {
+          if (diagList) diagList.innerHTML = suggestions.map((s) => `<li>${s}</li>`).join('');
+          if (diagBox) diagBox.classList.remove('hidden');
+        }
+
+        const md = `# Daily Ops Dashboard — ${c.day}\n\n## Summary\n- Revenue: **$${Number(c.revenue).toLocaleString()}** (baseline $${Number(b.revenue || 0).toLocaleString()})\n- Orders: **${c.orders}** (baseline ${Number(b.orders || 0).toFixed(0)})\n- AOV: **$${aov.toFixed(2)}**\n- CR: **${(cr * 100).toFixed(2)}%**\n\n## Paid Media\n- Meta spend: $${Number(c.meta_spend).toLocaleString()} | ROAS: ${meta_roas.toFixed(2)}\n- Google spend: $${Number(c.google_spend).toLocaleString()} | ROAS: ${google_roas.toFixed(2)}\n\n## Alerts\n${(dash.alerts || []).length ? (dash.alerts.map((a) => `- [${a.severity.toUpperCase()}] ${a.message}`).join('\n')) : '- No alerts.'}\n`;
         document.getElementById('briefText').textContent = md;
       } else {
-        // fallback to mock brief
         const data = await UI.api('/brief/daily');
         if (data) {
           UI.setAlertBadges(data.alerts);
@@ -146,7 +189,7 @@
     },
 
     async loadScenarios() {
-      // Populate scenario dropdown from backend (fallback to defaults if endpoint missing)
+      // Populate scenario dropdown from backend
       const sel = document.getElementById('selScenario');
       if (!sel) return;
       const data = await UI.api('/mocks');
@@ -156,8 +199,19 @@
         const opt = document.createElement('option');
         opt.value = s.key;
         opt.textContent = s.title;
+        opt.dataset.desc = s.description || '';
         sel.appendChild(opt);
       }
+      UI.updateScenarioHelp();
+      sel.onchange = UI.updateScenarioHelp;
+    },
+
+    updateScenarioHelp() {
+      const sel = document.getElementById('selScenario');
+      const help = document.getElementById('scenarioHelp');
+      if (!sel || !help) return;
+      const opt = sel.options[sel.selectedIndex];
+      help.textContent = opt?.dataset?.desc ? `Scenario: ${opt.dataset.desc}` : '';
     },
 
     async seedData() {

@@ -46,9 +46,9 @@ Implement DB + endpoints + UI wiring.
 
 ## Check (C)
 Manual test checklist:
-- Add day → dashboard updates
+- Seed scenario → dashboard updates
+- Switch scenario → alerts change
 - Add multiple days → baseline changes
-- Alerts trigger when values are intentionally bad
 - Memory add + load works
 - Changes snapshot + list works
 

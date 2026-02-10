@@ -56,16 +56,33 @@ pip install -r requirements.txt
 python -m daily_ops_agent.cli.main brief
 ```
 
-### 4) Run the API + open docs
+### 4) Run the API + open UI
 ```bash
 uvicorn daily_ops_agent.api.main:app --reload
 ```
 
 Open:
+- UI dashboard: **http://127.0.0.1:8000/**
 - Swagger UI: **http://127.0.0.1:8000/docs**
-- Daily brief: **http://127.0.0.1:8000/brief/daily**
 
-### 5) Snapshot demo landing pages
+### 5) Seed mock scenarios (UI + API)
+In the UI (tab **Brief**) you can select a scenario and click **Seed** then **Generate**.
+
+API equivalents:
+- List scenarios:
+```bash
+curl http://127.0.0.1:8000/mocks
+```
+- Seed a scenario:
+```bash
+curl -X POST "http://127.0.0.1:8000/mocks/seed?scenario=revenue_crash&days=8"
+```
+- Fetch dashboard:
+```bash
+curl "http://127.0.0.1:8000/dashboard?days=30&baseline_days=7"
+```
+
+### 6) Snapshot demo landing pages
 ```bash
 curl -X POST http://127.0.0.1:8000/changes/snapshot
 curl "http://127.0.0.1:8000/changes?limit=20"
