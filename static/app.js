@@ -1,6 +1,7 @@
 (() => {
   const UI = {
     tab: 'brief',
+    charts: { revenue: null, cr: null, orders: null, roas: null },
     setBanner(kind, msg) {
       const el = document.getElementById('banner');
       if (!msg) {
@@ -90,6 +91,7 @@
     },
     setAlertBadges(alerts) {
       const el = document.getElementById('alert-badges');
+      if (!el) return;
       el.innerHTML = '';
       if (!alerts || alerts.length === 0) {
         el.innerHTML = '<span class="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-sm">No alerts</span>';
@@ -100,12 +102,94 @@
         const cls = sev === 'high'
           ? 'bg-red-500/10 border-red-500/30'
           : sev === 'med'
-            ? 'bg-blue-500/10 border-blue-500/30'
+            ? 'bg-blue-500/10 border border-blue-500/30'
             : 'bg-green-500/10 border-green-500/30';
         const span = document.createElement('span');
         span.className = `px-3 py-1 rounded-full border text-sm ${cls}`;
         span.textContent = `${sev.toUpperCase()}: ${a.message || a.key}`;
         el.appendChild(span);
+      }
+    },
+
+    renderCharts(items) {
+      if (typeof window.Chart === 'undefined') return;
+      if (!items || items.length === 0) return;
+
+      // Items come desc; we want asc for charts.
+      const series = [...items].reverse().slice(-8);
+      const labels = series.map((x) => x.day.slice(5));
+
+      const revenue = series.map((x) => x.revenue);
+      const orders = series.map((x) => x.orders);
+      const cr = series.map((x) => (x.sessions ? (x.orders / x.sessions) * 100 : 0));
+      const metaRoas = series.map((x) => (x.meta_spend ? (x.meta_revenue / x.meta_spend) : 0));
+      const googleRoas = series.map((x) => (x.google_spend ? (x.google_revenue / x.google_spend) : 0));
+
+      const makeLine = (canvasId, label, data, color) => {
+        const el = document.getElementById(canvasId);
+        if (!el) return null;
+        return new Chart(el, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label,
+              data,
+              borderColor: color,
+              backgroundColor: color,
+              tension: 0.35,
+              pointRadius: 2,
+              borderWidth: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: true },
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.12)' } },
+              y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.12)' } },
+            },
+          },
+        });
+      };
+
+      const destroy = (c) => { try { c?.destroy(); } catch {} };
+      destroy(UI.charts.revenue);
+      destroy(UI.charts.orders);
+      destroy(UI.charts.cr);
+      destroy(UI.charts.roas);
+
+      UI.charts.revenue = makeLine('chartRevenue', 'Revenue', revenue, '#60a5fa');
+      UI.charts.orders = makeLine('chartOrders', 'Orders', orders, '#22c55e');
+      UI.charts.cr = makeLine('chartCr', 'CR %', cr, '#a78bfa');
+
+      const roasEl = document.getElementById('chartRoas');
+      if (roasEl) {
+        UI.charts.roas = new Chart(roasEl, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Meta ROAS', data: metaRoas, borderColor: '#fbbf24', backgroundColor: '#fbbf24', tension: 0.35, pointRadius: 2, borderWidth: 2 },
+              { label: 'Google ROAS', data: googleRoas, borderColor: '#34d399', backgroundColor: '#34d399', tension: 0.35, pointRadius: 2, borderWidth: 2 },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#cbd5e1' } },
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.12)' } },
+              y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.12)' } },
+            },
+          },
+        });
       }
     },
     async loadBrief() {
@@ -155,6 +239,8 @@
             </div>
           `).join('');
         }
+
+        UI.renderCharts(dash.items || []);
 
         // Suggested checks (very simple heuristics)
         const suggestions = [];
