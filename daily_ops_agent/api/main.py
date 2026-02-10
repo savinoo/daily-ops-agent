@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from daily_ops_agent.domain.anomalies import compare
 from daily_ops_agent.domain.brief import render_brief
 from daily_ops_agent.domain.memory import add_decision, list_memory
+from daily_ops_agent.domain.pages import list_page_hashes, record_page_hash
+from daily_ops_agent.infra.settings import settings
 from daily_ops_agent.orchestration.pipeline import fetch_yesterday_and_baseline
 
 app = FastAPI(title="Daily Ops Agent", version="0.1.0")
@@ -46,3 +48,22 @@ def memory_add(payload: dict) -> dict:
 
     new_id = add_decision(decision=decision, outcome=outcome, day=day)
     return {"ok": True, "id": new_id}
+
+
+@app.post("/changes/snapshot")
+def snapshot_pages() -> dict:
+    urls = [u.strip() for u in settings.landing_pages.split(",") if u.strip()]
+    results = []
+    for url in urls:
+        try:
+            ph = record_page_hash(url)
+            results.append({"ok": True, **ph.__dict__})
+        except Exception as e:  # noqa: BLE001
+            results.append({"ok": False, "url": url, "error": str(e)})
+    return {"results": results}
+
+
+@app.get("/changes")
+def changes(url: str | None = None, limit: int = 50) -> dict:
+    items = list_page_hashes(url=url, limit=limit)
+    return {"items": [i.__dict__ for i in items]}

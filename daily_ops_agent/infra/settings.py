@@ -10,5 +10,8 @@ class Settings(BaseSettings):
     # database
     sqlite_path: str = "./daily_ops_agent.sqlite"
 
+    # demo landing pages (comma-separated)
+    landing_pages: str = "https://example.com,https://www.wikipedia.org,https://httpbin.org/html"
+
 
 settings = Settings()

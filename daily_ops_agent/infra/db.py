@@ -17,6 +17,13 @@ def init_db() -> None:
               decision TEXT NOT NULL,
               outcome TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS page_hashes (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              created_at TEXT NOT NULL,
+              url TEXT NOT NULL,
+              content_hash TEXT NOT NULL
+            );
             """
         )
         conn.commit()
