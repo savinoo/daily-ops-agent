@@ -10,7 +10,9 @@ from fastapi import Request
 
 from daily_ops_agent.domain.anomalies import compare
 from daily_ops_agent.domain.brief import render_brief
+from daily_ops_agent.domain.dashboard import asdict_baseline, asdict_metrics, compute_alerts, compute_baseline
 from daily_ops_agent.domain.memory import add_decision, list_memory
+from daily_ops_agent.domain.metrics_store import list_metrics, upsert_from_payload
 from daily_ops_agent.domain.pages import list_page_hashes, record_page_hash
 from daily_ops_agent.infra.settings import settings
 from daily_ops_agent.orchestration.pipeline import fetch_yesterday_and_baseline
@@ -35,6 +37,7 @@ def health() -> dict:
 
 @app.get("/brief/daily")
 def daily_brief() -> dict:
+    """Mock-mode daily brief (always available)."""
     today = date.today()
     y, b = fetch_yesterday_and_baseline(today)
     alerts = compare(y, b)
@@ -42,6 +45,40 @@ def daily_brief() -> dict:
         "date": y.day.isoformat(),
         "brief_markdown": render_brief(y, b, alerts),
         "alerts": [a.__dict__ for a in alerts],
+    }
+
+
+@app.post("/metrics")
+def metrics_upsert(payload: dict) -> dict:
+    day = str(payload.get("day", "")).strip()
+    if not day:
+        return {"ok": False, "error": "day is required (YYYY-MM-DD)"}
+
+    upsert_from_payload(day=day, payload=payload)
+    return {"ok": True}
+
+
+@app.get("/metrics")
+def metrics_list(days: int = 30) -> dict:
+    items = list_metrics(days=days)
+    return {"items": [asdict_metrics(m) for m in items]}
+
+
+@app.get("/dashboard")
+def dashboard(days: int = 30, baseline_days: int = 7) -> dict:
+    items = list_metrics(days=days)
+    if not items:
+        return {"items": [], "baseline": None, "alerts": []}
+
+    curr = items[0]
+    baseline = compute_baseline(items[1 : 1 + baseline_days])
+    alerts = compute_alerts(curr, baseline)
+
+    return {
+        "current": asdict_metrics(curr),
+        "baseline": asdict_baseline(baseline),
+        "alerts": [a.__dict__ for a in alerts],
+        "items": [asdict_metrics(m) for m in items],
     }
 
 

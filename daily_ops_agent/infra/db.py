@@ -25,6 +25,18 @@ def init_db() -> None:
               url TEXT NOT NULL,
               content_hash TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS daily_metrics (
+              day TEXT PRIMARY KEY,
+              created_at TEXT NOT NULL,
+              revenue REAL NOT NULL,
+              orders INTEGER NOT NULL,
+              sessions INTEGER NOT NULL,
+              meta_spend REAL NOT NULL,
+              meta_revenue REAL NOT NULL,
+              google_spend REAL NOT NULL,
+              google_revenue REAL NOT NULL
+            );
             """
         )
         conn.commit()

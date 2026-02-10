@@ -58,9 +58,11 @@
       if (tab === 'brief') {
         UI.setActions(`
           <button id="btnGen" class="px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/30 font-semibold" >Generate</button>
+          <button id="btnSeed" class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700">Seed sample data</button>
           <a class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700" href="/docs">/docs</a>
         `);
         document.getElementById('btnGen').onclick = UI.loadBrief;
+        document.getElementById('btnSeed').onclick = UI.seedData;
       } else if (tab === 'changes') {
         UI.setActions(`
           <button id="btnSnap" class="px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/30 font-semibold">Snapshot</button>
@@ -101,12 +103,32 @@
     },
     async loadBrief() {
       const btn = document.getElementById('btnGen');
-      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-      const data = await UI.api('/brief/daily');
+      if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+      // Prefer real dashboard when available
+      const dash = await UI.api('/dashboard?days=30&baseline_days=7');
+      if (dash && dash.current) {
+        UI.setAlertBadges(dash.alerts);
+        // Build a short brief from dashboard data
+        const c = dash.current;
+        const b = dash.baseline || {};
+        const fmt = (n) => (n === null || n === undefined) ? '—' : n;
+        const aov = c.orders ? (c.revenue / c.orders) : 0;
+        const cr = c.sessions ? (c.orders / c.sessions) : 0;
+        const meta_roas = c.meta_spend ? (c.meta_revenue / c.meta_spend) : 0;
+        const google_roas = c.google_spend ? (c.google_revenue / c.google_spend) : 0;
+
+        const md = `# Daily Ops Dashboard — ${c.day}\n\n## Summary\n- Revenue: **$${Number(c.revenue).toLocaleString()}** (baseline $${Number(b.revenue||0).toLocaleString()})\n- Orders: **${fmt(c.orders)}** (baseline ${fmt(b.orders)})\n- AOV: **$${aov.toFixed(2)}**\n- CR: **${(cr*100).toFixed(2)}%**\n\n## Paid Media\n- Meta spend: $${Number(c.meta_spend).toLocaleString()} | ROAS: ${meta_roas.toFixed(2)}\n- Google spend: $${Number(c.google_spend).toLocaleString()} | ROAS: ${google_roas.toFixed(2)}\n\n## Alerts\n${(dash.alerts||[]).length ? (dash.alerts.map(a=>`- [${a.severity.toUpperCase()}] ${a.message}`).join('\n')) : '- No alerts.'}\n`;
+        document.getElementById('briefText').textContent = md;
+      } else {
+        // fallback to mock brief
+        const data = await UI.api('/brief/daily');
+        if (data) {
+          UI.setAlertBadges(data.alerts);
+          document.getElementById('briefText').textContent = data.brief_markdown || '';
+        }
+      }
+
       if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
-      if (!data) return;
-      UI.setAlertBadges(data.alerts);
-      document.getElementById('briefText').textContent = data.brief_markdown || '';
     },
     async snapshot() {
       const btn = document.getElementById('btnSnap');
@@ -114,6 +136,28 @@
       await UI.api('/changes/snapshot', 'POST');
       if (btn) { btn.disabled = false; btn.textContent = 'Snapshot'; }
       await UI.loadChanges();
+    },
+
+    async seedData() {
+      // Seed 8 days of sample data so dashboard becomes immediately useful.
+      const today = new Date();
+      const fmt = (d) => d.toISOString().slice(0,10);
+      const baseRevenue = 12000;
+      for (let i=8;i>=1;i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate()-i);
+        const day = fmt(d);
+        const jitter = (n) => Math.round(n * (0.9 + Math.random()*0.25));
+        const revenue = jitter(baseRevenue);
+        const orders = jitter(140);
+        const sessions = jitter(9800);
+        const meta_spend = jitter(820);
+        const meta_revenue = jitter(4100);
+        const google_spend = jitter(640);
+        const google_revenue = jitter(2900);
+        await UI.api('/metrics', 'POST', {day, revenue, orders, sessions, meta_spend, meta_revenue, google_spend, google_revenue});
+      }
+      UI.setBanner('ok', 'Seeded sample metrics (last 8 days). Click Generate.');
     },
     async loadChanges() {
       const data = await UI.api('/changes?limit=20');
