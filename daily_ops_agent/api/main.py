@@ -100,6 +100,10 @@ def home() -> str:
       <div>
         <h1 class="title">Daily Ops Agent</h1>
         <p class="sub">Daily ops brief + alerts + decision memory (mock adapters). Built as a product-style portfolio project.</p>
+        <p class="sub" style="margin-top:10px;max-width:72ch">
+          This app simulates an internal “Daily Ops” agent for e-commerce teams. It aggregates metrics, compares yesterday vs baseline,
+          flags anomalies, stores lightweight decision memory, and snapshots landing pages to detect changes.
+        </p>
       </div>
       <div class="links">
         <a class="chip" href="/docs">Swagger /docs</a>
@@ -172,6 +176,7 @@ def home() -> str:
 
   <script>
     window.__dailyOpsUiLoaded = true;
+    window.__dailyOpsUiVersion = 'v2';
     const state = { tab: 'brief' };
 
     function setBanner(kind, msg){
@@ -317,9 +322,9 @@ def home() -> str:
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      showTab('brief');
-    });
+    // Initialize immediately (script is at end of body) + also on DOMContentLoaded for safety.
+    showTab('brief');
+    document.addEventListener('DOMContentLoaded', () => showTab('brief'));
   </script>
 </body>
 </html>"""
