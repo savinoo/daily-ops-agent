@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - USE_MOCK_ADAPTERS=true
+      - SQLITE_PATH=/data/daily_ops_agent.sqlite
+    volumes:
+      - ./data:/data
