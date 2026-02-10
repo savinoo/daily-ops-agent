@@ -10,7 +10,9 @@ def hash_text(text: str) -> str:
 
 
 def fetch_and_hash_url(url: str, timeout_s: float = 10.0) -> str:
-    with httpx.Client(timeout=timeout_s, follow_redirects=True) as client:
+    # Some sites block default clients; set a minimal User-Agent.
+    headers = {"User-Agent": "daily-ops-agent/0.1 (+https://github.com/savinoo/daily-ops-agent)"}
+    with httpx.Client(timeout=timeout_s, follow_redirects=True, headers=headers) as client:
         resp = client.get(url)
         resp.raise_for_status()
         return hash_text(resp.text)

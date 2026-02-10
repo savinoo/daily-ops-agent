@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     sqlite_path: str = "./daily_ops_agent.sqlite"
 
     # demo landing pages (comma-separated)
-    landing_pages: str = "https://example.com,https://www.wikipedia.org,https://httpbin.org/html"
+    # Use public pages that usually allow bots (demo-only)
+    landing_pages: str = "https://example.com,https://httpbin.org/html,https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore"
 
 
 settings = Settings()

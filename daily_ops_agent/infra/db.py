@@ -8,7 +8,8 @@ from daily_ops_agent.infra.settings import settings
 
 def init_db() -> None:
     with sqlite3.connect(settings.sqlite_path) as conn:
-        conn.execute(
+        # Use executescript because SQLite `execute()` only supports a single statement at a time.
+        conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS decision_memory (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
