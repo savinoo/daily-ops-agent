@@ -88,6 +88,15 @@ curl -X POST http://127.0.0.1:8000/changes/snapshot
 curl "http://127.0.0.1:8000/changes?limit=20"
 ```
 
+## Deploy (Render)
+This repo includes a `render.yaml` so you can deploy it on Render in a couple clicks.
+
+- Create a new **Blueprint** on Render
+- Point it to this GitHub repo
+- Render will run the `startCommand` and expose the service
+
+Once deployed, open the root URL and use **Scenario → Seed → Generate**.
+
 ## Docker
 ```bash
 docker compose up --build
@@ -96,3 +105,4 @@ docker compose up --build
 ## Docs
 - `docs/architecture.md`
 - `docs/runbook.md`
+- `docs/analise-escopo-v1.md`
