@@ -171,6 +171,7 @@ def home() -> str:
   </div>
 
   <script>
+    window.__dailyOpsUiLoaded = true;
     const state = { tab: 'brief' };
 
     function setBanner(kind, msg){
@@ -316,7 +317,9 @@ def home() -> str:
       }
     }
 
-    showTab('brief');
+    document.addEventListener('DOMContentLoaded', () => {
+      showTab('brief');
+    });
   </script>
 </body>
 </html>"""
