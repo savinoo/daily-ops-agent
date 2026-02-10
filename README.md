@@ -16,15 +16,30 @@ A recruiter/client should be able to run this in minutes and understand:
 
 ### 2) Install
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### 3) Run demo (mock adapters)
 ```bash
-python -m daily_ops_agent.cli brief --date yesterday
+python -m daily_ops_agent.cli.main brief
 ```
 
+### 4) Run API
+```bash
+uvicorn daily_ops_agent.api.main:app --reload
+# http://localhost:8000/brief/daily
+```
+
+## Docker
+```bash
+docker compose up --build
+```
+
+## Docs
+- `docs/architecture.md`
+- `docs/runbook.md`
+
 ## Status
-MVP in progress.
+MVP: brief + alerts + API + SQLite decision memory. Next: change detection + real adapters.

@@ -31,6 +31,6 @@ def render_brief(y: DailyMetrics, b: DailyMetrics, alerts: list[Alert]) -> str:
 
     lines.append("")
     lines.append("## Decision memory")
-    lines.append("- (MVP) Not wired yet")
+    lines.append("- See /memory endpoint (SQLite) — add decisions + outcomes to improve future briefs")
 
     return "\n".join(lines)
