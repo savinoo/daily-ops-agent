@@ -12,6 +12,8 @@ from daily_ops_agent.domain.pages import list_page_hashes, record_page_hash
 from daily_ops_agent.infra.settings import settings
 from daily_ops_agent.orchestration.pipeline import fetch_yesterday_and_baseline
 
+UI_VERSION = "v3"
+
 app = FastAPI(title="Daily Ops Agent", version="0.1.0")
 
 
@@ -98,7 +100,7 @@ def home() -> str:
   <div class="wrap">
     <div class="top">
       <div>
-        <h1 class="title">Daily Ops Agent</h1>
+        <h1 class="title">Daily Ops Agent <span style="font-size:12px;color:var(--muted);font-weight:600">(""" + UI_VERSION + """)</span></h1>
         <p class="sub">Daily ops brief + alerts + decision memory (mock adapters). Built as a product-style portfolio project.</p>
         <p class="sub" style="margin-top:10px;max-width:72ch">
           This app simulates an internal “Daily Ops” agent for e-commerce teams. It aggregates metrics, compares yesterday vs baseline,
@@ -176,7 +178,7 @@ def home() -> str:
 
   <script>
     window.__dailyOpsUiLoaded = true;
-    window.__dailyOpsUiVersion = 'v2';
+    window.__dailyOpsUiVersion = '""" + UI_VERSION + """';
     const state = { tab: 'brief' };
 
     function setBanner(kind, msg){
