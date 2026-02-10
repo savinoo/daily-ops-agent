@@ -31,8 +31,11 @@ python -m daily_ops_agent.cli.main brief
 ### 4) Run API
 ```bash
 uvicorn daily_ops_agent.api.main:app --reload
-# http://localhost:8000/brief/daily
 ```
+
+Open:
+- Interactive API docs (Swagger UI): **http://127.0.0.1:8000/docs**
+- Daily brief endpoint: **http://127.0.0.1:8000/brief/daily**
 
 ## Docker
 ```bash
