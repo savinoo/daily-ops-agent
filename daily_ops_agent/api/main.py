@@ -14,6 +14,13 @@ from daily_ops_agent.domain.dashboard import asdict_baseline, asdict_metrics, co
 from daily_ops_agent.domain.memory import add_decision, list_memory
 from daily_ops_agent.domain.metrics_store import list_metrics, upsert_from_payload
 from daily_ops_agent.domain.mock_scenarios import generate_series, list_scenarios
+from daily_ops_agent.api.schemas import (
+    DashboardOut,
+    MetricsUpsertRequest,
+    MocksListOut,
+    MocksSeedOut,
+    OkOut,
+)
 from daily_ops_agent.domain.pages import list_page_hashes, record_page_hash
 from daily_ops_agent.infra.settings import settings
 from daily_ops_agent.orchestration.pipeline import fetch_yesterday_and_baseline
@@ -49,14 +56,14 @@ def daily_brief() -> dict:
     }
 
 
-@app.post("/metrics")
-def metrics_upsert(payload: dict) -> dict:
-    day = str(payload.get("day", "")).strip()
+@app.post("/metrics", response_model=OkOut)
+def metrics_upsert(req: MetricsUpsertRequest) -> OkOut:
+    day = req.day.strip()
     if not day:
-        return {"ok": False, "error": "day is required (YYYY-MM-DD)"}
+        return OkOut(ok=False, error="day is required (YYYY-MM-DD)")
 
-    upsert_from_payload(day=day, payload=payload)
-    return {"ok": True}
+    upsert_from_payload(day=day, payload=req.model_dump())
+    return OkOut(ok=True)
 
 
 @app.get("/metrics")
@@ -65,40 +72,40 @@ def metrics_list(days: int = 30) -> dict:
     return {"items": [asdict_metrics(m) for m in items]}
 
 
-@app.get("/dashboard")
-def dashboard(days: int = 30, baseline_days: int = 7) -> dict:
+@app.get("/dashboard", response_model=DashboardOut)
+def dashboard(days: int = 30, baseline_days: int = 7) -> DashboardOut:
     items = list_metrics(days=days)
     if not items:
-        return {"items": [], "baseline": None, "alerts": []}
+        return DashboardOut(items=[], baseline=None, alerts=[])
 
     curr = items[0]
     baseline = compute_baseline(items[1 : 1 + baseline_days])
     alerts = compute_alerts(curr, baseline)
 
-    return {
-        "current": asdict_metrics(curr),
-        "baseline": asdict_baseline(baseline),
-        "alerts": [a.__dict__ for a in alerts],
-        "items": [asdict_metrics(m) for m in items],
-    }
+    return DashboardOut(
+        current=asdict_metrics(curr),
+        baseline=asdict_baseline(baseline),
+        alerts=[a.__dict__ for a in alerts],
+        items=[asdict_metrics(m) for m in items],
+    )
 
 
-@app.get("/mocks")
-def mocks_list() -> dict:
-    return {"items": list_scenarios()}
+@app.get("/mocks", response_model=MocksListOut)
+def mocks_list() -> MocksListOut:
+    return MocksListOut(items=list_scenarios())
 
 
-@app.post("/mocks/seed")
-def mocks_seed(scenario: str = "steady_growth", days: int = 8) -> dict:
+@app.post("/mocks/seed", response_model=MocksSeedOut)
+def mocks_seed(scenario: str = "steady_growth", days: int = 8) -> MocksSeedOut:
     try:
         rows = generate_series(scenario_key=scenario, days=days)
     except ValueError as e:
-        return {"ok": False, "error": str(e)}
+        return MocksSeedOut(ok=False, error=str(e))
 
     for r in rows:
         upsert_from_payload(day=r["day"], payload=r)
 
-    return {"ok": True, "scenario": scenario, "days": days}
+    return MocksSeedOut(ok=True, scenario=scenario, days=days)
 
 
 @app.get("/memory")

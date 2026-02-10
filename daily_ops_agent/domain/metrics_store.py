@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from daily_ops_agent.infra.db import db_conn
 
@@ -50,7 +50,7 @@ def upsert_metrics(m: StoredDailyMetrics) -> None:
 
 
 def upsert_from_payload(day: str, payload: dict) -> None:
-    created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    created_at = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
     m = StoredDailyMetrics(
         day=day,
         created_at=created_at,
