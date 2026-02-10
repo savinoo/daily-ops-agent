@@ -13,6 +13,7 @@ from daily_ops_agent.domain.brief import render_brief
 from daily_ops_agent.domain.dashboard import asdict_baseline, asdict_metrics, compute_alerts, compute_baseline
 from daily_ops_agent.domain.memory import add_decision, list_memory
 from daily_ops_agent.domain.metrics_store import list_metrics, upsert_from_payload
+from daily_ops_agent.domain.mock_scenarios import generate_series, list_scenarios
 from daily_ops_agent.domain.pages import list_page_hashes, record_page_hash
 from daily_ops_agent.infra.settings import settings
 from daily_ops_agent.orchestration.pipeline import fetch_yesterday_and_baseline
@@ -80,6 +81,24 @@ def dashboard(days: int = 30, baseline_days: int = 7) -> dict:
         "alerts": [a.__dict__ for a in alerts],
         "items": [asdict_metrics(m) for m in items],
     }
+
+
+@app.get("/mocks")
+def mocks_list() -> dict:
+    return {"items": list_scenarios()}
+
+
+@app.post("/mocks/seed")
+def mocks_seed(scenario: str = "steady_growth", days: int = 8) -> dict:
+    try:
+        rows = generate_series(scenario_key=scenario, days=days)
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}
+
+    for r in rows:
+        upsert_from_payload(day=r["day"], payload=r)
+
+    return {"ok": True, "scenario": scenario, "days": days}
 
 
 @app.get("/memory")

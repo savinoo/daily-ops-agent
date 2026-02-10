@@ -58,11 +58,18 @@
       if (tab === 'brief') {
         UI.setActions(`
           <button id="btnGen" class="px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/30 font-semibold" >Generate</button>
-          <button id="btnSeed" class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700">Seed sample data</button>
+          <select id="selScenario" class="px-3 py-2 rounded-xl bg-slate-900/40 border border-slate-700 text-slate-200">
+            <option value="steady_growth">Steady growth</option>
+            <option value="cr_drop">CR drop</option>
+            <option value="ad_spend_spike">Ad spend spike</option>
+            <option value="revenue_crash">Revenue crash</option>
+          </select>
+          <button id="btnSeed" class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700">Seed</button>
           <a class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700" href="/docs">/docs</a>
         `);
         document.getElementById('btnGen').onclick = UI.loadBrief;
         document.getElementById('btnSeed').onclick = UI.seedData;
+        UI.loadScenarios();
       } else if (tab === 'changes') {
         UI.setActions(`
           <button id="btnSnap" class="px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/30 font-semibold">Snapshot</button>
@@ -138,26 +145,29 @@
       await UI.loadChanges();
     },
 
-    async seedData() {
-      // Seed 8 days of sample data so dashboard becomes immediately useful.
-      const today = new Date();
-      const fmt = (d) => d.toISOString().slice(0,10);
-      const baseRevenue = 12000;
-      for (let i=8;i>=1;i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate()-i);
-        const day = fmt(d);
-        const jitter = (n) => Math.round(n * (0.9 + Math.random()*0.25));
-        const revenue = jitter(baseRevenue);
-        const orders = jitter(140);
-        const sessions = jitter(9800);
-        const meta_spend = jitter(820);
-        const meta_revenue = jitter(4100);
-        const google_spend = jitter(640);
-        const google_revenue = jitter(2900);
-        await UI.api('/metrics', 'POST', {day, revenue, orders, sessions, meta_spend, meta_revenue, google_spend, google_revenue});
+    async loadScenarios() {
+      // Populate scenario dropdown from backend (fallback to defaults if endpoint missing)
+      const sel = document.getElementById('selScenario');
+      if (!sel) return;
+      const data = await UI.api('/mocks');
+      if (!data?.items) return;
+      sel.innerHTML = '';
+      for (const s of data.items) {
+        const opt = document.createElement('option');
+        opt.value = s.key;
+        opt.textContent = s.title;
+        sel.appendChild(opt);
       }
-      UI.setBanner('ok', 'Seeded sample metrics (last 8 days). Click Generate.');
+    },
+
+    async seedData() {
+      const sel = document.getElementById('selScenario');
+      const scenario = sel?.value || 'steady_growth';
+      const btn = document.getElementById('btnSeed');
+      if (btn) { btn.disabled = true; btn.textContent = 'Seeding…'; }
+      const res = await UI.api(`/mocks/seed?scenario=${encodeURIComponent(scenario)}&days=8`, 'POST');
+      if (btn) { btn.disabled = false; btn.textContent = 'Seed'; }
+      if (res?.ok) UI.setBanner('ok', `Seeded scenario: ${scenario}. Click Generate.`);
     },
     async loadChanges() {
       const data = await UI.api('/changes?limit=20');
