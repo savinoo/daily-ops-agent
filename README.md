@@ -3,11 +3,13 @@
 Autonomous **Daily Ops Brief** generator for e-commerce: aggregates read-only metrics (Shopify + Meta Ads + Google Ads), detects performance anomalies, and maintains a lightweight decision memory.
 
 ## Why this exists
-A recruiter/client should be able to run this in minutes and understand:
-- how data connectors are structured
-- how metrics are normalized
-- how alerts are generated
-- how memory is persisted
+This project was built to **apply and showcase my learnings** in agentic systems and production-style engineering.
+
+It is also inspired by real-world client needs (daily ops reporting), and serves as a reusable template to:
+- structure data connectors cleanly
+- normalize metrics into a single domain model
+- generate anomaly/alert signals
+- persist lightweight decision memory (SQLite)
 
 ## Quickstart (local)
 
