@@ -73,6 +73,14 @@ def home() -> str:
     .badge.med{border-color:rgba(96,165,250,.5);background:rgba(96,165,250,.10)}
     .badge.low{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.10)}
 
+    /* Markdown-ish rendering */
+    #brief-md h1{font-size:20px;margin:0 0 10px}
+    #brief-md h2{font-size:14px;margin:14px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    #brief-md ul{margin:6px 0 0 18px}
+    #brief-md li{margin:6px 0}
+    #brief-md code{background:rgba(96,165,250,.12);border:1px solid var(--border);padding:2px 6px;border-radius:8px}
+    #brief-md strong{color:#fff}
+
     pre{margin:0;white-space:pre-wrap;word-break:break-word;background:rgba(15,23,42,.65);border:1px solid var(--border);padding:14px;border-radius:14px;overflow:auto;max-height:520px}
 
     label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -118,6 +126,7 @@ def home() -> str:
             <div style="color:var(--muted)">Generate a Daily Ops Brief (mock data) and review alerts.</div>
             <div id="alerts" class="alertline"></div>
             <div style="height:10px"></div>
+            <div id="brief-md" style="display:none;background:rgba(15,23,42,.45);border:1px solid var(--border);padding:14px;border-radius:14px;max-height:520px;overflow:auto"></div>
             <pre id="brief">Click “Generate” to render the brief…</pre>
           </div>
 
@@ -255,7 +264,22 @@ def home() -> str:
       if(btn){ btn.disabled=false; btn.textContent='Generate'; }
       if(!data) return;
       setAlerts(data.alerts);
-      document.getElementById('brief').textContent = data.brief_markdown || '';
+      const md = data.brief_markdown || '';
+      document.getElementById('brief').textContent = md;
+
+      // lightweight markdown render for the vitrine (headers + bullets + bold)
+      const html = md
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/^# (.*)$/gm,'<h1>$1</h1>')
+        .replace(/^## (.*)$/gm,'<h2>$1</h2>')
+        .replace(/^\- (.*)$/gm,'<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gs,(m)=>'<ul>'+m+'</ul>')
+        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\n\n+/g,'<div style="height:10px"></div>')
+      ;
+      const out = document.getElementById('brief-md');
+      out.innerHTML = html;
+      out.style.display = '';
     }
 
     async function snapshotPages(){
