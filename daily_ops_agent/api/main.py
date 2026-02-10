@@ -45,7 +45,29 @@ def health() -> dict:
 
 @app.get("/brief/daily")
 def daily_brief() -> dict:
-    """Mock-mode daily brief (always available)."""
+    """Daily brief.
+
+    Behavior:
+    - If there are stored metrics (SQLite), use them (current day + baseline) for a real brief.
+    - Otherwise, fall back to mock pipeline so the demo is always runnable.
+    """
+
+    stored = list_metrics(days=8)
+    if stored:
+        curr = stored[0]
+        baseline = compute_baseline(stored[1:8])
+        alerts = compute_alerts(curr, baseline)
+        from daily_ops_agent.domain.dashboard import to_daily, baseline_to_daily
+
+        y = to_daily(curr)
+        b = baseline_to_daily(curr.day, baseline)
+        return {
+            "date": curr.day,
+            "brief_markdown": render_brief(y, b, alerts),
+            "alerts": [a.__dict__ for a in alerts],
+            "mode": "sqlite",
+        }
+
     today = date.today()
     y, b = fetch_yesterday_and_baseline(today)
     alerts = compare(y, b)
@@ -53,6 +75,7 @@ def daily_brief() -> dict:
         "date": y.day.isoformat(),
         "brief_markdown": render_brief(y, b, alerts),
         "alerts": [a.__dict__ for a in alerts],
+        "mode": "mock",
     }
 
 
