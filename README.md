@@ -4,6 +4,8 @@ Autonomous **Daily Ops Brief** generator for e-commerce: aggregates read-only me
 
 **Built to apply my learnings** in agentic systems + production-style engineering, inspired by real client ops needs.
 
+![Social preview](assets/social-preview.png)
+
 ![Swagger UI](assets/swagger-ui.png)
 
 ## What it does
@@ -14,8 +16,28 @@ Autonomous **Daily Ops Brief** generator for e-commerce: aggregates read-only me
 - Stores lightweight **decision memory** (SQLite)
 - Snapshots landing page hashes for change detection (demo)
 
+## Architecture (high level)
+```mermaid
+graph TD
+  A[Shopify/Meta/Google] --> B[Adapters]
+  B --> C[DailyMetrics]
+  C --> D[Anomaly Rules]
+  C --> E[Brief Renderer]
+  D --> E
+  E --> F[API / CLI]
+  G[SQLite] <---> H[Decision Memory]
+  G <---> I[Page Hashes]
+  H --> F
+  I --> F
+```
+
 ## Example output
 See: `assets/sample-brief.md`
+
+## What I learned building this
+- Designing clean boundaries between **adapters**, **domain logic**, and **orchestration**
+- Turning vague "numbers look bad" into deterministic **alerts + next checks**
+- Keeping automation safe: **no secrets in repo**, mock-first demos, small testable units
 
 ## 60-second demo (local)
 
