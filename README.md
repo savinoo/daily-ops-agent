@@ -1,8 +1,19 @@
 # Daily Ops Agent
 
+![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 Autonomous **Daily Ops Brief** generator for e-commerce: aggregates read-only metrics (Shopify + Meta Ads + Google Ads), detects performance anomalies, and maintains a lightweight decision memory.
 
 **Built to apply my learnings** in agentic systems + production-style engineering, inspired by real client ops needs.
+
+## 💼 Business Impact
+
+**Problem:** E-commerce operators spend 45-60 minutes every morning manually checking dashboards across Shopify, Meta Ads, and Google Ads to understand what happened yesterday and what needs attention today.
+
+**Solution:** This agent does it in seconds. It aggregates metrics, detects anomalies automatically, and generates a structured intelligence brief with prioritized action items — replacing a 60-minute ritual with instant, actionable insights.
 
 ![Social preview](assets/social-preview.png)
 
